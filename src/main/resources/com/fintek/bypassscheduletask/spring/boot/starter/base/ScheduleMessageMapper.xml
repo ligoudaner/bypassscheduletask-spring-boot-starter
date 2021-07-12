@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.fintek.bypassscheduletask.spring.boot.starter.base.ScheduleMessageMapper">
+
+    <resultMap id="BaseResultMap" type="com.fintek.bypassscheduletask.spring.boot.starter.base.ScheduleMessage">
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <id column="orderId" jdbcType="VARCHAR" property="order_id"/>
+        <result column="type" jdbcType="VARCHAR" property="type"/>
+        <result column="serverId" jdbcType="VARCHAR" property="server_id"/>
+        <result column="version" jdbcType="VARCHAR" property="version"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+	    id,
+	    order_id,
+	    `type`,
+	    server_id,
+	    version
+	</sql>
+
+    <select id="selectById" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from
+        ${tableName}
+        where id = #{id,jdbcType=BIGINT}
+    </select>
+
+	<select id="selectByOrderIdAndType" resultMap="BaseResultMap">
+		select
+		<include refid="Base_Column_List"/>
+		from
+		${tableName}
+		where `order_id` = #{orderId,jdbcType=VARCHAR}
+		 and `type`=#{type,jdbcType=VARCHAR}
+	</select>
+
+    <insert id="insert" parameterType="com.fintek.bypassscheduletask.spring.boot.starter.base.ScheduleMessage" useGeneratedKeys="true"
+			keyProperty="id">
+	    insert into ${tableName} (
+	    	id,
+	        order_id,
+	        `type`,
+	        server_id,
+	        `version`
+	    )
+	    values (
+	    	#{id,jdbcType=BIGINT},
+	    	#{orderId,jdbcType=VARCHAR},
+	    	#{type,jdbcType=VARCHAR},
+	    	#{serverId,jdbcType=VARCHAR},
+	    	#{version,jdbcType=BIGINT}
+	    )
+  	</insert>
+
+    <update id="updateVersionACC" parameterType="com.fintek.bypassscheduletask.spring.boot.starter.base.ScheduleMessage">
+		update ${tableName} set `version`=#{version,jdbcType=BIGINT}+1 where `id`=#{id,jdbcType=BIGINT}
+	</update>
+
+	<update id="compareAndSet">
+		update ${tableName} set `version`=#{update,jdbcType=BIGINT} where `id`=#{id,jdbcType=BIGINT} and `version`=#{expect,jdbcType=BIGINT}
+	</update>
+    <update id="createTable" parameterType="String">
+		CREATE TABLE if not exists ${tableName} (
+		  `id` int(11) NOT NULL AUTO_INCREMENT,
+		  `order_id` varchar(50) DEFAULT NULL,
+		  `type` varchar(255) DEFAULT NULL COMMENT '类型',
+		  `server_id` varchar(100) DEFAULT NULL COMMENT '实例ID',
+		  `version` int(11) DEFAULT '0' COMMENT '版本号',
+		  `ctime` datetime DEFAULT CURRENT_TIMESTAMP,
+		  `mtime` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+		  PRIMARY KEY (`id`) USING BTREE,
+		  UNIQUE KEY `order_id` (`order_id`,`type`) USING BTREE
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+	</update>
+</mapper>

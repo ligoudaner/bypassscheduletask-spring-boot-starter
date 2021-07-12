@@ -1,0 +1,2 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.fintek.bypassscheduletask.spring.boot.starter.ScheduleUtilAutoConfiguration
