@@ -1,2 +1,2 @@
 # bypassscheduletask-spring-boot-starter
-eureka多服务分流定时任务
+eureka多服务定时任务分流消费
