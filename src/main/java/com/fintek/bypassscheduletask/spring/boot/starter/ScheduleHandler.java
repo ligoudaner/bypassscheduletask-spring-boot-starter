@@ -1,9 +1,10 @@
 package com.fintek.bypassscheduletask.spring.boot.starter;
 
-import com.fintek.bypassscheduletask.spring.boot.starter.base.ScheduleMessage;
-import com.fintek.bypassscheduletask.spring.boot.starter.conf.WorkerConfiguration;
+import com.fintek.bypassscheduletask.spring.boot.starter.annotation.ScheduleType;
 import com.fintek.bypassscheduletask.spring.boot.starter.base.ScheduleIdHolder;
+import com.fintek.bypassscheduletask.spring.boot.starter.base.ScheduleMessage;
 import com.fintek.bypassscheduletask.spring.boot.starter.base.ScheduleMessageMapper;
+import com.fintek.bypassscheduletask.spring.boot.starter.conf.WorkerConfiguration;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.session.ExecutorType;
@@ -13,7 +14,6 @@ import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -48,7 +48,7 @@ public abstract class ScheduleHandler<T extends ScheduleIdHolder> implements Run
      */
     protected abstract List<T> getData(Integer instancesTotal, Integer currentNumber);
 
-    public abstract void addTask(ScheduledTaskRegistrar scheduledTaskRegistrar, ScheduleHandler scheduleHandler);
+    public abstract void addTask(ScheduledTaskRegistrar scheduledTaskRegistrar, ScheduleHandler<T> scheduleHandler);
 
 
     @Override
@@ -80,20 +80,22 @@ public abstract class ScheduleHandler<T extends ScheduleIdHolder> implements Run
         if (log.isDebugEnabled()) {
             log.info("数据大小-{}", data.size());
         }
-        SqlSession sqlSession= scheduleClient.getMybatisSqlSessionFactory().getSqlSessionFactory().openSession(ExecutorType.SIMPLE, false);
+        SqlSession sqlSession = scheduleClient.getMybatisSqlSessionFactory().getSqlSessionFactory().openSession(ExecutorType.SIMPLE, false);
         ScheduleMessageMapper scheduleMessageMapper = sqlSession.getMapper(ScheduleMessageMapper.class);
         String tableName = workerConfiguration.getTableName();
-        String type = this.getClass().getName();
+
+        ScheduleType scheduleType = this.getClass().getAnnotation(ScheduleType.class);
+
         try {
             for (T t : data) {
                 boolean flag = false;
                 ScheduleMessage scheduleMessage = null;
                 try {
-                    scheduleMessage = scheduleMessageMapper.selectByOrderIdAndType(tableName, t.getScheduleId(), type);
+                    scheduleMessage = scheduleMessageMapper.selectByOrderIdAndType(tableName, t.getScheduleId(), scheduleType.value());
                     if (scheduleMessage == null) {
                         scheduleMessage = new ScheduleMessage();
                         scheduleMessage.setOrderId(t.getScheduleId());
-                        scheduleMessage.setType(type);
+                        scheduleMessage.setType(scheduleType.value());
                         scheduleMessage.setServerId(workerConfiguration.getInstanceId());
                         scheduleMessage.setTableName(tableName);
                         scheduleMessage.setVersion(0);
@@ -103,7 +105,7 @@ public abstract class ScheduleHandler<T extends ScheduleIdHolder> implements Run
                             throw new RuntimeException("failed to insert record");
                         }
                     }
-                    if (scheduleMessage.getVersion()!=-1&&scheduleMessageMapper.compareAndSet(tableName, scheduleMessage.getId(), scheduleMessage.getVersion(), -1)> 0) {
+                    if (scheduleMessage.getVersion() != -1 && scheduleMessageMapper.compareAndSet(tableName, scheduleMessage.getId(), scheduleMessage.getVersion(), -1) > 0) {
                         flag = process(t);
                     } else {
                         flag = true;
@@ -117,12 +119,14 @@ public abstract class ScheduleHandler<T extends ScheduleIdHolder> implements Run
                     e.printStackTrace();
                 }
                 if (!flag) {
-                    scheduleMessage.setTableName(tableName);
-                    //如果返回false，版本号+1,表示这条任务执行失败，下次可以继续执行
-                    scheduleMessageMapper.updateVersionACC(scheduleMessage);
+                    if (scheduleMessage != null) {
+                        scheduleMessage.setTableName(tableName);
+                        //如果返回false，版本号+1,表示这条任务执行失败，下次可以继续执行
+                        scheduleMessageMapper.updateVersionACC(scheduleMessage);
+                    }
                 }
             }
-        }finally {
+        } finally {
             sqlSession.close();
         }
     }
@@ -149,8 +153,7 @@ public abstract class ScheduleHandler<T extends ScheduleIdHolder> implements Run
         if (null == serviceInstances || serviceInstances.size() < 1) {
             return 0;
         }
-        List<String> ipPortEureka = serviceInstances.stream().map(serviceInstance -> serviceInstance.getHost() + ":" + serviceInstance.getPort()).collect(Collectors.toList());
-        Collections.sort(ipPortEureka);
+        List<String> ipPortEureka = serviceInstances.stream().map(serviceInstance -> serviceInstance.getHost() + ":" + serviceInstance.getPort()).sorted().collect(Collectors.toList());
         int index = ipPortEureka.indexOf(instanceId);
         if (log.isDebugEnabled()) {
             log.info("处在当前列表第：{}", (index));

@@ -1,15 +1,11 @@
 package com.fintek.bypassscheduletask.spring.boot.starter;
 
+import com.fintek.bypassscheduletask.spring.boot.starter.base.ScheduleMessageMapper;
 import com.fintek.bypassscheduletask.spring.boot.starter.conf.WorkerConfiguration;
 import com.fintek.bypassscheduletask.spring.boot.starter.mybatis.MybatisSqlSessionFactory;
-import com.fintek.bypassscheduletask.spring.boot.starter.base.ScheduleMessageMapper;
 import org.apache.ibatis.session.SqlSession;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ScheduleClient {
-
-    private static final Logger logger = LoggerFactory.getLogger(ScheduleClient.class);
 
     private WorkerConfiguration workerConfiguration;
     private MybatisSqlSessionFactory mybatisSqlSessionFactory;

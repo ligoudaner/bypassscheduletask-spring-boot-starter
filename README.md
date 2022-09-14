@@ -18,10 +18,14 @@ application.yml 配置
 bypass-schedule-task:
     tableName: sys_schedule_message
 ```
+
 ```java
+
+import com.fintek.bypassscheduletask.spring.boot.starter.annotation.ScheduleType;
 
 @Service
 @Slf4j
+@ScheduleType("TestJob")
 public class TestJob extends ScheduleFixedRateHandler<? extends ScheduleIdHolder> {
 
 
@@ -46,7 +50,7 @@ public class TestJob extends ScheduleFixedRateHandler<? extends ScheduleIdHolder
      */
     @Override
     protected List<?> getData(Integer instancesTotal, Integer currentNumber) {
-        return 业务查询(instancesTotal,currentNumber);
+        return 业务查询(instancesTotal, currentNumber);
     }
 }
 ```

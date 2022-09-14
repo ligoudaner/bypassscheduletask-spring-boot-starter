@@ -109,11 +109,11 @@
     <distributionManagement>
         <repository>
             <id>maven-release</id>
-            <url>http://nexus.91fintek.com/repository/maven-releases/</url>
+            <url>http://172.19.222.174:81/repository/maven-releases/</url>
         </repository>
         <snapshotRepository>
             <id>maven-snapshots</id>
-            <url>http://nexus.91fintek.com/repository/maven-snapshots/</url>
+            <url>http://172.19.222.174:81/repository/maven-snapshots/</url>
         </snapshotRepository>
     </distributionManagement>
 </project>
